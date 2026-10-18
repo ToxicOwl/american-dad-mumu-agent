@@ -1,0 +1,26 @@
+{
+  "emulator": {
+    "adb_path": "C:\\Program Files\\MuMuPlayer\\nx_main\\adb.exe",
+    "device": "127.0.0.1:7555",
+    "expected_screenshot": {
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "safety": {
+    "mode": "monitor",
+    "forbid_diamond_spend": true,
+    "max_consecutive_errors": 3
+  },
+  "monitor": {
+    "interval_seconds": 5,
+    "save_unchanged_screenshots": false,
+    "main_screen_template": "main_base"
+  },
+  "templates": {
+    "main_base": {
+      "path": "calibration/templates/main_base.png",
+      "min_score": 0.88
+    }
+  }
+}

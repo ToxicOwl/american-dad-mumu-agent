@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+config.json
+captures/*.png
+!captures/.gitkeep
+logs/*.jsonl
+!logs/.gitkeep
+calibration/templates/*.png
+!calibration/templates/.gitkeep

@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "american-dad-mumu-agent"
+version = "0.2.2"
+description = "Local, safety-first ADB monitor and calibration tool for MuMu Player"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "Local user build"}]
+dependencies = [
+  "opencv-python>=4.10,<5",
+]
+
+[project.scripts]
+ad-agent = "ad_agent.cli:main"
+
+[tool.setuptools]
+packages = ["ad_agent"]
+
+[tool.setuptools.package-data]
+ad_agent = ["assets/*.png"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

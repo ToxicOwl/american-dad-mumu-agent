@@ -1,0 +1,13 @@
+.venv/
+.work/
+american_dad_mumu_agent.egg-info/
+__pycache__/
+.pytest_cache/
+config.json
+config.backup.json
+captures/
+logs/
+backups/
+AmericanDadArena-v*.exe
+scripts/*.pre-*.ps1
+scripts/*-hotfix.ps1

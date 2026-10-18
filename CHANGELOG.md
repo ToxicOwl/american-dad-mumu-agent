@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.0 — 18 October 2026
+
+- Redesigned the Windows HUD with a modern command-center layout, clearer action sections and improved button states.
+- Added the Roger header visual plus extracted transparent gold, silver and bronze trophy assets for the podium counters.
+
 ## 1.5.0 — 18 October 2026
 
 - Added the guarded Invasion route: Map event icon → SHOW → OCR-located random `Invasion!` UFO → one selected `BATTLE XN` or `ATTACK` action.

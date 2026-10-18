@@ -32,13 +32,15 @@ internal sealed class UpdateInfo
 
 internal sealed class ArenaControlForm : Form
 {
-    private const string ApplicationVersion = "1.4.0";
+    private const string ApplicationVersion = "1.5.0";
     private const string ReleaseRepository = "ToxicOwl/american-dad-mumu-agent";
     private readonly string rootDirectory;
     private readonly string cycleScript;
     private readonly string hudScript;
     private readonly string hudStatsPath;
     private readonly string updateScript;
+    private readonly string invasionCaptureScript;
+    private readonly string invasionRunScript;
     private readonly NumericUpDown tournamentCount;
     private readonly Button dryRunButton;
     private readonly Button selectedRunsButton;
@@ -47,6 +49,13 @@ internal sealed class ArenaControlForm : Form
     private readonly Button refreshHudButton;
     private readonly Button resetStatsButton;
     private readonly Button checkUpdatesButton;
+    private readonly ComboBox invasionStep;
+    private readonly Button captureInvasionButton;
+    private readonly Button openInvasionCapturesButton;
+    private readonly Label invasionInstruction;
+    private readonly ComboBox invasionMode;
+    private readonly Button invasionDryRunButton;
+    private readonly Button runInvasionButton;
     private readonly Label updateVersionLabel;
     private readonly RichTextBox output;
     private readonly Label status;
@@ -66,6 +75,8 @@ internal sealed class ArenaControlForm : Form
         hudScript = Path.Combine(rootDirectory, "scripts", "arena-hud.ps1");
         hudStatsPath = Path.Combine(rootDirectory, "logs", "arena-hud-stats.json");
         updateScript = Path.Combine(rootDirectory, "scripts", "update-agent.ps1");
+        invasionCaptureScript = Path.Combine(rootDirectory, "scripts", "invasion-capture.ps1");
+        invasionRunScript = Path.Combine(rootDirectory, "scripts", "invasion-run.ps1");
 
         Text = "American Dad Arena Control";
         StartPosition = FormStartPosition.CenterScreen;
@@ -155,6 +166,104 @@ internal sealed class ArenaControlForm : Form
         checkUpdatesButton = CreateButton("Check updates", new Point(832, 215), Color.FromArgb(88, 91, 180), new Size(124, 38));
         stopButton.Enabled = false;
 
+        var invasionPanel = new Panel
+        {
+            Location = new Point(22, 266),
+            Size = new Size(ClientSize.Width - 44, 66),
+            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
+            BackColor = Color.FromArgb(55, 42, 82),
+            BorderStyle = BorderStyle.FixedSingle
+        };
+        var invasionCaption = new Label
+        {
+            Text = "INVASION CALIBRATION — screenshot only, no taps",
+            ForeColor = Color.FromArgb(228, 201, 255),
+            AutoSize = true,
+            Location = new Point(12, 8),
+            Font = new Font("Segoe UI", 8F, FontStyle.Bold, GraphicsUnit.Point)
+        };
+        invasionStep = new ComboBox
+        {
+            DropDownStyle = ComboBoxStyle.DropDownList,
+            Location = new Point(12, 29),
+            Size = new Size(305, 24),
+            Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point)
+        };
+        invasionStep.Items.AddRange(new object[]
+        {
+            "1. Map — Invasion icon visible",
+            "2. Invasion panel — after icon",
+            "3. UFO list — SHOW and UFO visible",
+            "4. Attack choice — x10 and Attack visible",
+            "5. Final result menu — after a manual battle",
+            "Current screen — generic capture"
+        });
+        invasionStep.SelectedIndex = 0;
+        captureInvasionButton = CreateButton("Capture selected", new Point(328, 27), Color.FromArgb(111, 76, 160), new Size(138, 28));
+        openInvasionCapturesButton = CreateButton("Open captures", new Point(476, 27), Color.FromArgb(77, 105, 143), new Size(122, 28));
+        invasionInstruction = new Label
+        {
+            Text = GetInvasionInstruction(0),
+            ForeColor = Color.FromArgb(221, 227, 246),
+            AutoSize = false,
+            Size = new Size(325, 32),
+            Location = new Point(610, 25),
+            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
+            Font = new Font("Segoe UI", 8F, FontStyle.Regular, GraphicsUnit.Point)
+        };
+        invasionPanel.Controls.Add(invasionCaption);
+        invasionPanel.Controls.Add(invasionStep);
+        invasionPanel.Controls.Add(captureInvasionButton);
+        invasionPanel.Controls.Add(openInvasionCapturesButton);
+        invasionPanel.Controls.Add(invasionInstruction);
+
+        var invasionRunPanel = new Panel
+        {
+            Location = new Point(22, 342),
+            Size = new Size(ClientSize.Width - 44, 58),
+            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
+            BackColor = Color.FromArgb(73, 47, 38),
+            BorderStyle = BorderStyle.FixedSingle
+        };
+        var invasionRunCaption = new Label
+        {
+            Text = "INVASION RUN — one selected action only",
+            ForeColor = Color.FromArgb(255, 214, 175),
+            AutoSize = true,
+            Location = new Point(12, 7),
+            Font = new Font("Segoe UI", 8F, FontStyle.Bold, GraphicsUnit.Point)
+        };
+        invasionMode = new ComboBox
+        {
+            DropDownStyle = ComboBoxStyle.DropDownList,
+            Location = new Point(12, 26),
+            Size = new Size(255, 24),
+            Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point)
+        };
+        invasionMode.Items.AddRange(new object[]
+        {
+            "All remaining rounds — BATTLE XN",
+            "One round — ATTACK"
+        });
+        invasionMode.SelectedIndex = 0;
+        invasionDryRunButton = CreateButton("Invasion safe test", new Point(278, 24), Color.FromArgb(88, 108, 157), new Size(150, 28));
+        runInvasionButton = CreateButton("Run Invasion once", new Point(438, 24), Color.FromArgb(181, 102, 47), new Size(165, 28));
+        var invasionRunInfo = new Label
+        {
+            Text = "Declines optional power with ATTACK; ADD and every post-result tap stay blocked.",
+            ForeColor = Color.FromArgb(232, 221, 210),
+            AutoSize = false,
+            Size = new Size(325, 30),
+            Location = new Point(614, 23),
+            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
+            Font = new Font("Segoe UI", 8F, FontStyle.Regular, GraphicsUnit.Point)
+        };
+        invasionRunPanel.Controls.Add(invasionRunCaption);
+        invasionRunPanel.Controls.Add(invasionMode);
+        invasionRunPanel.Controls.Add(invasionDryRunButton);
+        invasionRunPanel.Controls.Add(runInvasionButton);
+        invasionRunPanel.Controls.Add(invasionRunInfo);
+
         status = new Label
         {
             Text = "Ready. Start from the game base or the Food / Ticket selector.",
@@ -188,8 +297,8 @@ internal sealed class ArenaControlForm : Form
 
         var logPanel = new Panel
         {
-            Location = new Point(22, 272),
-            Size = new Size(ClientSize.Width - 44, ClientSize.Height - 294),
+            Location = new Point(22, 410),
+            Size = new Size(ClientSize.Width - 44, ClientSize.Height - 432),
             Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
             BackColor = BackColor
         };
@@ -208,6 +317,8 @@ internal sealed class ArenaControlForm : Form
         Controls.Add(untilFoodEndsButton);
         Controls.Add(stopButton);
         Controls.Add(checkUpdatesButton);
+        Controls.Add(invasionPanel);
+        Controls.Add(invasionRunPanel);
         Controls.Add(logPanel);
 
         dryRunButton.Click += async delegate { await StartDryRunAsync(); };
@@ -217,6 +328,11 @@ internal sealed class ArenaControlForm : Form
         refreshHudButton.Click += async delegate { await RefreshFoodAsync(); };
         resetStatsButton.Click += async delegate { await ResetStatsAsync(); };
         checkUpdatesButton.Click += async delegate { await CheckForUpdatesAsync(true); };
+        invasionStep.SelectedIndexChanged += delegate { invasionInstruction.Text = GetInvasionInstruction(invasionStep.SelectedIndex); };
+        captureInvasionButton.Click += async delegate { await CaptureInvasionStepAsync(); };
+        openInvasionCapturesButton.Click += delegate { OpenInvasionCaptures(); };
+        invasionDryRunButton.Click += async delegate { await RunInvasionDryRunAsync(); };
+        runInvasionButton.Click += async delegate { await RunInvasionLiveAsync(); };
         FormClosing += delegate { StopCurrentRun(); };
         Shown += async delegate { await CheckForUpdatesAsync(false); await RefreshFoodAsync(); };
 
@@ -237,6 +353,19 @@ internal sealed class ArenaControlForm : Form
         {
             updateVersionLabel.Text = "Updates: module unavailable";
             checkUpdatesButton.Enabled = false;
+        }
+        if (!File.Exists(invasionCaptureScript))
+        {
+            invasionInstruction.Text = "Invasion calibration module is unavailable.";
+            invasionStep.Enabled = false;
+            captureInvasionButton.Enabled = false;
+            openInvasionCapturesButton.Enabled = false;
+        }
+        if (!File.Exists(invasionRunScript))
+        {
+            invasionMode.Enabled = false;
+            invasionDryRunButton.Enabled = false;
+            runInvasionButton.Enabled = false;
         }
     }
 
@@ -316,6 +445,222 @@ internal sealed class ArenaControlForm : Form
         {
             SetStatus("HUD reset failed: " + ex.Message, Color.FromArgb(255, 150, 150));
         }
+    }
+
+    private static string GetInvasionInstruction(int selectedIndex)
+    {
+        switch (selectedIndex)
+        {
+            case 0: return "Open MAP manually and place the Invasion icon fully on screen, then capture.";
+            case 1: return "Tap Invasion manually, wait for its panel, then capture before SHOW.";
+            case 2: return "Tap SHOW manually, wait for the UFO list, then capture. Do not select an UFO yet.";
+            case 3: return "Select an UFO manually, then capture x10 and Attack. Do not press either button.";
+            case 4: return "After one manual battle only, capture the final result menu before closing it.";
+            default: return "Capture the screen currently visible in MuMu. No game input will be sent.";
+        }
+    }
+
+    private static string GetInvasionStepName(int selectedIndex)
+    {
+        switch (selectedIndex)
+        {
+            case 0: return "01-map-invasion-icon";
+            case 1: return "02-invasion-panel";
+            case 2: return "03-show-ufo-list";
+            case 3: return "04-attack-choice-x10-or-attack";
+            case 4: return "05-final-result-menu";
+            default: return "99-current-screen";
+        }
+    }
+
+    private async Task CaptureInvasionStepAsync()
+    {
+        if (runningProcess != null)
+        {
+            MessageBox.Show("A process is already active. Wait for it to finish before capturing Invasion.", "Invasion calibration", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+        if (!File.Exists(invasionCaptureScript))
+        {
+            MessageBox.Show("Missing Invasion capture module: " + invasionCaptureScript, "Invasion calibration", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
+
+        string step = GetInvasionStepName(invasionStep.SelectedIndex);
+        SetStatus("Capturing Invasion calibration step — screenshot only, no game input.", Color.FromArgb(255, 226, 136));
+        SetRunning(true);
+        try
+        {
+            await RunInvasionCaptureScriptAsync(step);
+            SetStatus("Invasion screenshot saved. Select the next requested view when ready.", Color.FromArgb(170, 224, 180));
+        }
+        catch (Exception ex)
+        {
+            SetStatus("Invasion capture failed: " + ex.Message, Color.FromArgb(255, 150, 150));
+        }
+        finally
+        {
+            SetRunning(false);
+        }
+    }
+
+    private void OpenInvasionCaptures()
+    {
+        string folder = Path.Combine(rootDirectory, "captures", "invasion-calibration");
+        Directory.CreateDirectory(folder);
+        Process.Start(new ProcessStartInfo { FileName = folder, UseShellExecute = true });
+    }
+
+    private async Task RunInvasionCaptureScriptAsync(string step)
+    {
+        string arguments = "-NoProfile -ExecutionPolicy Bypass -File \"" + invasionCaptureScript + "\" -Step " + step;
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = PowerShellPath(),
+            Arguments = arguments,
+            WorkingDirectory = rootDirectory,
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true
+        };
+
+        var process = new Process();
+        process.StartInfo = startInfo;
+        process.EnableRaisingEvents = true;
+        var finished = new TaskCompletionSource<int>();
+        process.OutputDataReceived += delegate(object sender, DataReceivedEventArgs args)
+        {
+            if (!String.IsNullOrEmpty(args.Data)) AppendLine(args.Data);
+        };
+        process.ErrorDataReceived += delegate(object sender, DataReceivedEventArgs args)
+        {
+            if (!String.IsNullOrEmpty(args.Data)) AppendLine("ERROR: " + args.Data);
+        };
+        process.Exited += delegate { finished.TrySetResult(process.ExitCode); };
+
+        runningProcess = process;
+        AppendLine("Invasion calibration: " + step + " (screenshot only)");
+        if (!process.Start()) throw new InvalidOperationException("PowerShell could not be started.");
+        process.BeginOutputReadLine();
+        process.BeginErrorReadLine();
+        int exitCode = await finished.Task;
+        if (runningProcess == process) runningProcess = null;
+        if (exitCode != 0) throw new InvalidOperationException("Invasion capture script exited with code " + exitCode + ". Read the activity log for details.");
+    }
+
+    private string SelectedInvasionMode()
+    {
+        return invasionMode.SelectedIndex == 1 ? "Single" : "AllRemaining";
+    }
+
+    private async Task RunInvasionDryRunAsync()
+    {
+        if (!EnsureInvasionReady()) return;
+        SetStatus("Running Invasion safe test — no game input will be sent.", Color.FromArgb(255, 226, 136));
+        SetRunning(true);
+        try
+        {
+            await RunInvasionScriptAsync(SelectedInvasionMode(), true);
+            SetStatus("Invasion safe test completed.", Color.FromArgb(170, 224, 180));
+        }
+        catch (Exception ex)
+        {
+            SetStatus("Invasion safe test stopped: " + ex.Message, Color.FromArgb(255, 150, 150));
+        }
+        finally
+        {
+            SetRunning(false);
+        }
+    }
+
+    private async Task RunInvasionLiveAsync()
+    {
+        if (!EnsureInvasionReady()) return;
+        string mode = SelectedInvasionMode();
+        string selectedAction = mode == "AllRemaining" ? "the current BATTLE XN button (for example X10 or X9)" : "one ATTACK button";
+        var confirmation = MessageBox.Show(
+            "Start one Invasion action using " + selectedAction + "?\n\n" +
+            "The game will spend only the Food amount visibly shown by that button. " +
+            "The optional power prompt is declined using its green ATTACK button; ADD is blocked. " +
+            "The bot stops after saving the first post-battle screen and will not tap the result screen.",
+            "Confirm Invasion action",
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Warning);
+        if (confirmation != DialogResult.Yes) return;
+
+        SetStatus("Running one guarded Invasion action. No post-result click will be sent.", Color.FromArgb(255, 226, 136));
+        SetRunning(true);
+        try
+        {
+            await RunInvasionScriptAsync(mode, false);
+            SetStatus("Invasion action stopped safely after the captured post-battle screen.", Color.FromArgb(170, 224, 180));
+        }
+        catch (Exception ex)
+        {
+            SetStatus("Invasion stopped safely: " + ex.Message, Color.FromArgb(255, 150, 150));
+        }
+        finally
+        {
+            SetRunning(false);
+        }
+    }
+
+    private bool EnsureInvasionReady()
+    {
+        if (runningProcess != null)
+        {
+            MessageBox.Show("A process is already active.", "Invasion", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return false;
+        }
+        if (!File.Exists(invasionRunScript))
+        {
+            MessageBox.Show("Missing Invasion script: " + invasionRunScript, "Invasion", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return false;
+        }
+        return true;
+    }
+
+    private async Task RunInvasionScriptAsync(string mode, bool dryRun)
+    {
+        string arguments = "-NoProfile -ExecutionPolicy Bypass -File \"" + invasionRunScript + "\" -Mode " + mode;
+        if (dryRun) arguments += " -DryRun";
+        else arguments += " -Confirm";
+
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = PowerShellPath(),
+            Arguments = arguments,
+            WorkingDirectory = rootDirectory,
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true
+        };
+
+        var process = new Process();
+        process.StartInfo = startInfo;
+        process.EnableRaisingEvents = true;
+        var finished = new TaskCompletionSource<int>();
+        process.OutputDataReceived += delegate(object sender, DataReceivedEventArgs args)
+        {
+            if (!String.IsNullOrEmpty(args.Data)) AppendLine(args.Data);
+        };
+        process.ErrorDataReceived += delegate(object sender, DataReceivedEventArgs args)
+        {
+            if (!String.IsNullOrEmpty(args.Data)) AppendLine("ERROR: " + args.Data);
+        };
+        process.Exited += delegate { finished.TrySetResult(process.ExitCode); };
+
+        runningProcess = process;
+        AppendLine("Launching: invasion-run.ps1 -Mode " + mode + (dryRun ? " -DryRun" : " -Confirm"));
+        if (!process.Start()) throw new InvalidOperationException("PowerShell could not be started.");
+        process.BeginOutputReadLine();
+        process.BeginErrorReadLine();
+        int exitCode = await finished.Task;
+        if (runningProcess == process) runningProcess = null;
+        AppendLine("Invasion PowerShell exited with code " + exitCode + ".");
+        if (exitCode != 0) throw new InvalidOperationException("Invasion script exited with code " + exitCode + ". Read the activity log for details.");
     }
 
     private async Task CheckForUpdatesAsync(bool interactive)
@@ -736,6 +1081,12 @@ internal sealed class ArenaControlForm : Form
         refreshHudButton.Enabled = !running;
         resetStatsButton.Enabled = !running;
         checkUpdatesButton.Enabled = !running && File.Exists(updateScript);
+        invasionStep.Enabled = !running && File.Exists(invasionCaptureScript);
+        captureInvasionButton.Enabled = !running && File.Exists(invasionCaptureScript);
+        openInvasionCapturesButton.Enabled = !running && File.Exists(invasionCaptureScript);
+        invasionMode.Enabled = !running && File.Exists(invasionRunScript);
+        invasionDryRunButton.Enabled = !running && File.Exists(invasionRunScript);
+        runInvasionButton.Enabled = !running && File.Exists(invasionRunScript);
         stopButton.Enabled = running;
     }
 

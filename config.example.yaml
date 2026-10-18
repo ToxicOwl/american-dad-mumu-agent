@@ -1,0 +1,27 @@
+# Local profile for American Dad! Apocalypse Soon in MuMu Player.
+# The agent never taps the screen unless a future action module is explicitly installed
+# and enabled. Version 0.1 is monitor-and-calibration only.
+
+emulator:
+  adb_path: 'C:\Program Files\MuMuPlayer\nx_main\adb.exe'
+  device: '127.0.0.1:7555'
+  expected_screenshot:
+    width: 1280
+    height: 720
+
+safety:
+  mode: monitor             # monitor only; no input commands are permitted
+  forbid_diamond_spend: true
+  max_consecutive_errors: 3
+
+monitor:
+  interval_seconds: 5
+  save_unchanged_screenshots: false
+  main_screen_template: main_base
+
+templates:
+  # Create this with: ad-agent calibrate-template main_base X Y WIDTH HEIGHT
+  # Choose a distinctive, static area that is visible only on the base screen.
+  main_base:
+    path: calibration/templates/main_base.png
+    min_score: 0.88

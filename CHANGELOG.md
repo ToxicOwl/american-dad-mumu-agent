@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.5.0 — 18 October 2026
+
+- Added the guarded Invasion route: Map event icon → SHOW → OCR-located random `Invasion!` UFO → one selected `BATTLE XN` or `ATTACK` action.
+- Added visual fallback validation for the `BATTLE XN` / `ATTACK` layout when Windows OCR misses small labels; it explicitly rejects the optional-power popup.
+- The optional `EQUIP POWERS FOR BATTLE` popup uses only its green `ATTACK` button. The `ADD` button remains blocked.
+- Intermediate battle and `VICTORY` screens are observed only. At the complete end, the agent verifies and presses centered `HOME`, waits for `INVASION REPELLED`, then verifies and presses centered `OK` once.
+- Added Invasion calibration capture controls and both **Invasion safe test** and **Run Invasion once** controls in the Windows application.
+- Added `-FinalizeCurrent` for a guarded one-time HOME/OK completion from an already open verified final screen.
+
 ## 1.4.0 — 18 October 2026
 
 - Added a public GitHub Releases distribution channel and a confirmed in-app updater.

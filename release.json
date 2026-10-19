@@ -1,6 +1,6 @@
 {
   "product": "American Dad Arena Control",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "repository": "ToxicOwl/american-dad-mumu-agent",
   "release_asset": "AmericanDadArena-Windows.zip",
   "update_channel": "stable"

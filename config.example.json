@@ -17,6 +17,11 @@
     "save_unchanged_screenshots": false,
     "main_screen_template": "main_base"
   },
+  "haptic_alert": {
+    "enabled": true,
+    "threshold": 0.9,
+    "sound_path": "assets/haptic-alert.wav"
+  },
   "templates": {
     "main_base": {
       "path": "calibration/templates/main_base.png",

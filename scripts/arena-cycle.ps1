@@ -27,6 +27,7 @@ Set-Location $ProjectRoot
 $ConfigPath = Join-Path $ProjectRoot 'config.json'
 $FoodScript = Join-Path $PSScriptRoot 'arena-start-food.ps1'
 $ArenaScript = Join-Path $PSScriptRoot 'arena-run.ps1'
+$HapticAlertScript = Join-Path $PSScriptRoot 'haptic-alert.ps1'
 
 function Save-JsonFile {
     param([Parameter(Mandatory = $true)][string]$Path, [Parameter(Mandatory = $true)]$Value)
@@ -49,9 +50,46 @@ function Set-MonitorSafety {
     Save-JsonFile -Path $ConfigPath -Value $config
 }
 
+function Stop-ForHapticAlert {
+    # This guard is intentionally recognition-only. It never tries to solve,
+    # dismiss, confirm, or interact with the randomized haptic challenge.
+    $config = Get-Content -LiteralPath $ConfigPath -Raw | ConvertFrom-Json
+    $adbPath = [string]$config.emulator.adb_path
+    $device = [string]$config.emulator.device
+    $json = & $HapticAlertScript -Mode CheckCurrent -AdbPath $adbPath -Device $device
+    if ($LASTEXITCODE -ne 0) {
+        throw "Haptic Alert check failed with exit code $LASTEXITCODE. No next tournament was started."
+    }
+    $check = $json | ConvertFrom-Json
+    if (-not [bool]$check.detected) {
+        Write-Host ("Haptic Alert: clear (score {0}; threshold {1})." -f $check.score, $check.threshold) -ForegroundColor DarkGray
+        return
+    }
+
+    $sound = & $HapticAlertScript -Mode StartSound
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warning 'Haptic Alert was detected, but the alert sound could not be started.'
+    }
+    else {
+        try {
+            $soundState = $sound | ConvertFrom-Json
+            if (-not [bool]$soundState.started) {
+                Write-Warning ("Haptic Alert was detected, but audio is unavailable: {0}." -f $soundState.reason)
+            }
+        }
+        catch {
+            Write-Warning 'Haptic Alert was detected, but audio status could not be read.'
+        }
+    }
+
+    Write-Host 'HAPTIC ALERT DETECTED. Automation is stopped; no haptic puzzle action was sent.' -ForegroundColor Red
+    throw ("Haptic Alert detected (score {0}; threshold {1}). The captured evidence was saved at: {2}" -f $check.score, $check.threshold, $check.evidence_path)
+}
+
 if (-not (Test-Path -LiteralPath $ConfigPath)) { throw "Missing configuration: $ConfigPath" }
 if (-not (Test-Path -LiteralPath $FoodScript)) { throw "Missing Food module: $FoodScript" }
 if (-not (Test-Path -LiteralPath $ArenaScript)) { throw "Missing Arena module: $ArenaScript" }
+if (-not (Test-Path -LiteralPath $HapticAlertScript)) { throw "Missing Haptic Alert module: $HapticAlertScript" }
 
 if ($DryRun) {
     Write-Host 'CYCLE DRY RUN: no input will be sent.' -ForegroundColor Yellow
@@ -72,6 +110,10 @@ try {
         # Each Food start resets the strategy: lowest, lowest, better rank x3.
         Set-ActionSafety
         & $ArenaScript -MaxBattles $BattlesPerTournament -Confirm -StageWaitTimeoutSeconds $StageWaitTimeoutSeconds
+
+        # Guard the boundary before this launcher starts, or permits the caller to
+        # start, another Arena. A detection stops the entire cycle immediately.
+        Stop-ForHapticAlert
 
         Write-Host ("Tournament {0}/{1} finished or stopped safely." -f $number, $Tournaments) -ForegroundColor Green
     }

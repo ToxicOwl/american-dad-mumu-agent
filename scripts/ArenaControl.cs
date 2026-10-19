@@ -32,7 +32,7 @@ internal sealed class UpdateInfo
 
 internal sealed class ArenaControlForm : Form
 {
-    private const string ApplicationVersion = "1.6.0";
+    private const string ApplicationVersion = "1.7.0";
     private const string ReleaseRepository = "ToxicOwl/american-dad-mumu-agent";
     private readonly string rootDirectory;
     private readonly string cycleScript;
@@ -41,6 +41,7 @@ internal sealed class ArenaControlForm : Form
     private readonly string updateScript;
     private readonly string invasionCaptureScript;
     private readonly string invasionRunScript;
+    private readonly string hapticAlertScript;
     private readonly NumericUpDown tournamentCount;
     private readonly Button dryRunButton;
     private readonly Button selectedRunsButton;
@@ -49,6 +50,7 @@ internal sealed class ArenaControlForm : Form
     private readonly Button refreshHudButton;
     private readonly Button resetStatsButton;
     private readonly Button checkUpdatesButton;
+    private readonly Button stopHapticSoundButton;
     private readonly ComboBox invasionStep;
     private readonly Button captureInvasionButton;
     private readonly Button openInvasionCapturesButton;
@@ -77,6 +79,7 @@ internal sealed class ArenaControlForm : Form
         updateScript = Path.Combine(rootDirectory, "scripts", "update-agent.ps1");
         invasionCaptureScript = Path.Combine(rootDirectory, "scripts", "invasion-capture.ps1");
         invasionRunScript = Path.Combine(rootDirectory, "scripts", "invasion-run.ps1");
+        hapticAlertScript = Path.Combine(rootDirectory, "scripts", "haptic-alert.ps1");
 
         Text = "American Dad Arena Control";
         StartPosition = FormStartPosition.CenterScreen;
@@ -155,8 +158,11 @@ internal sealed class ArenaControlForm : Form
 
         refreshHudButton = CreateButton("Refresh Food", new Point(780, 18), Color.FromArgb(14, 116, 144), new Size(138, 36));
         resetStatsButton = CreateButton("Reset stats", new Point(928, 18), Color.FromArgb(153, 55, 74), new Size(136, 36));
+        stopHapticSoundButton = CreateButton("Stop alert sound", new Point(928, 65), Color.FromArgb(171, 49, 66), new Size(136, 29));
+        stopHapticSoundButton.Font = new Font("Segoe UI", 8F, FontStyle.Bold, GraphicsUnit.Point);
         hudPanel.Controls.Add(refreshHudButton);
         hudPanel.Controls.Add(resetStatsButton);
+        hudPanel.Controls.Add(stopHapticSoundButton);
 
         lastPlaceValue = new Label
         {
@@ -172,7 +178,7 @@ internal sealed class ArenaControlForm : Form
         foodPanel.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
         var foodCaption = new Label
         {
-            Text = "FOOD TOURNAMENTS",
+            Text = "FOOD TOURNAMENTS  •  HAPTIC ALERT ARMED BETWEEN TOURNAMENTS",
             ForeColor = Color.FromArgb(148, 196, 255),
             AutoSize = true,
             Location = new Point(14, 11),
@@ -374,6 +380,7 @@ internal sealed class ArenaControlForm : Form
         stopButton.Click += delegate { StopCurrentRun(); };
         refreshHudButton.Click += async delegate { await RefreshFoodAsync(); };
         resetStatsButton.Click += async delegate { await ResetStatsAsync(); };
+        stopHapticSoundButton.Click += delegate { StopHapticSound(); };
         checkUpdatesButton.Click += async delegate { await CheckForUpdatesAsync(true); };
         invasionStep.SelectedIndexChanged += delegate { invasionInstruction.Text = GetInvasionInstruction(invasionStep.SelectedIndex); };
         captureInvasionButton.Click += async delegate { await CaptureInvasionStepAsync(); };
@@ -413,6 +420,11 @@ internal sealed class ArenaControlForm : Form
             invasionMode.Enabled = false;
             invasionDryRunButton.Enabled = false;
             runInvasionButton.Enabled = false;
+        }
+        if (!File.Exists(hapticAlertScript))
+        {
+            stopHapticSoundButton.Enabled = false;
+            AppendLine("WARNING: Haptic Alert module is unavailable.");
         }
     }
 
@@ -1169,6 +1181,29 @@ internal sealed class ArenaControlForm : Form
         }
     }
 
+    private void StopHapticSound()
+    {
+        if (!File.Exists(hapticAlertScript)) return;
+        try
+        {
+            var process = Process.Start(new ProcessStartInfo
+            {
+                FileName = PowerShellPath(),
+                Arguments = "-NoProfile -ExecutionPolicy Bypass -File \"" + hapticAlertScript + "\" -Mode StopSound",
+                WorkingDirectory = rootDirectory,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            });
+            if (process != null) process.WaitForExit(5000);
+            AppendLine("Haptic Alert sound stop requested. The game dialog was not touched.");
+            SetStatus("Haptic Alert sound stopped. The game dialog was not touched.", Color.FromArgb(255, 226, 136));
+        }
+        catch (Exception ex)
+        {
+            AppendLine("Haptic Alert sound stop warning: " + ex.Message);
+        }
+    }
+
     private void ForceMonitorMode()
     {
         try
@@ -1214,6 +1249,7 @@ internal sealed class ArenaControlForm : Form
         invasionMode.Enabled = !running && File.Exists(invasionRunScript);
         invasionDryRunButton.Enabled = !running && File.Exists(invasionRunScript);
         runInvasionButton.Enabled = !running && File.Exists(invasionRunScript);
+        stopHapticSoundButton.Enabled = File.Exists(hapticAlertScript);
         stopButton.Enabled = running;
     }
 

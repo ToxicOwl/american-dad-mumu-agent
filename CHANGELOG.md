@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.7.0 — 19 October 2026
+
+- Added reusable Haptic Alert detection for the fixed SUSPICIOUS HAPTIC ACTIVITY header.
+- Arena checks the read-only guard between tournaments and stops without interacting with the challenge when the dialog is detected.
+- Added optional looped WAV alarm support and a desktop Stop alert sound control.
+
 ## 1.6.0 — 18 October 2026
 
 - Redesigned the Windows HUD with a modern command-center layout, clearer action sections and improved button states.

@@ -32,7 +32,7 @@ internal sealed class UpdateInfo
 
 internal sealed class ArenaControlForm : Form
 {
-    private const string ApplicationVersion = "1.5.0";
+    private const string ApplicationVersion = "1.7.0";
     private const string ReleaseRepository = "ToxicOwl/american-dad-mumu-agent";
     private readonly string rootDirectory;
     private readonly string cycleScript;
@@ -41,6 +41,7 @@ internal sealed class ArenaControlForm : Form
     private readonly string updateScript;
     private readonly string invasionCaptureScript;
     private readonly string invasionRunScript;
+    private readonly string hapticAlertScript;
     private readonly NumericUpDown tournamentCount;
     private readonly Button dryRunButton;
     private readonly Button selectedRunsButton;
@@ -49,6 +50,7 @@ internal sealed class ArenaControlForm : Form
     private readonly Button refreshHudButton;
     private readonly Button resetStatsButton;
     private readonly Button checkUpdatesButton;
+    private readonly Button stopHapticSoundButton;
     private readonly ComboBox invasionStep;
     private readonly Button captureInvasionButton;
     private readonly Button openInvasionCapturesButton;
@@ -77,68 +79,117 @@ internal sealed class ArenaControlForm : Form
         updateScript = Path.Combine(rootDirectory, "scripts", "update-agent.ps1");
         invasionCaptureScript = Path.Combine(rootDirectory, "scripts", "invasion-capture.ps1");
         invasionRunScript = Path.Combine(rootDirectory, "scripts", "invasion-run.ps1");
+        hapticAlertScript = Path.Combine(rootDirectory, "scripts", "haptic-alert.ps1");
 
         Text = "American Dad Arena Control";
         StartPosition = FormStartPosition.CenterScreen;
-        MinimumSize = new Size(920, 650);
-        Size = new Size(980, 740);
+        MinimumSize = new Size(1100, 750);
+        Size = new Size(1180, 820);
         Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-        BackColor = Color.FromArgb(31, 38, 49);
-        ForeColor = Color.White;
+        BackColor = Color.FromArgb(15, 23, 42);
+        ForeColor = Color.FromArgb(241, 245, 249);
+
+        var headerPanel = CreateSurfacePanel(new Point(0, 0), new Size(ClientSize.Width, 164), Color.FromArgb(24, 35, 55));
+        headerPanel.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
 
         var title = new Label
         {
-            Text = "American Dad Arena — local control",
-            Font = new Font("Segoe UI", 16F, FontStyle.Bold, GraphicsUnit.Point),
+            Text = "ARENA COMMAND CENTER",
+            Font = new Font("Segoe UI", 19F, FontStyle.Bold, GraphicsUnit.Point),
             ForeColor = Color.White,
             AutoSize = true,
-            Location = new Point(20, 18)
+            Location = new Point(26, 18)
         };
 
         var description = new Label
         {
-            Text = "Food only • no Tickets • no diamonds • stops safely on an unrecognized screen • v" + ApplicationVersion,
-            ForeColor = Color.FromArgb(190, 210, 230),
+            Text = "FOOD ONLY  •  NO TICKETS  •  NO DIAMONDS  •  GUARDED LOCAL AUTOMATION",
+            ForeColor = Color.FromArgb(163, 203, 239),
             AutoSize = true,
-            Location = new Point(22, 51)
+            Location = new Point(28, 56),
+            Font = new Font("Segoe UI", 8.5F, FontStyle.Bold, GraphicsUnit.Point)
         };
+
+        var versionBadge = new Label
+        {
+            Text = "LOCAL BUILD  v" + ApplicationVersion,
+            ForeColor = Color.FromArgb(187, 247, 208),
+            BackColor = Color.FromArgb(19, 78, 74),
+            AutoSize = false,
+            TextAlign = ContentAlignment.MiddleCenter,
+            Size = new Size(168, 26),
+            Location = new Point(28, 108),
+            Font = new Font("Segoe UI", 8F, FontStyle.Bold, GraphicsUnit.Point)
+        };
+
+        var headerNote = new Label
+        {
+            Text = "Roger is watching the runs.",
+            ForeColor = Color.FromArgb(203, 213, 225),
+            AutoSize = true,
+            Anchor = AnchorStyles.Top | AnchorStyles.Right,
+            Location = new Point(ClientSize.Width - 472, 130),
+            Font = new Font("Segoe UI", 8F, FontStyle.Italic, GraphicsUnit.Point)
+        };
+
+        var rogerHero = CreateRogerHero();
+        rogerHero.Location = new Point(ClientSize.Width - 328, 0);
+        rogerHero.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+        headerPanel.Controls.Add(title);
+        headerPanel.Controls.Add(description);
+        headerPanel.Controls.Add(versionBadge);
+        headerPanel.Controls.Add(headerNote);
+        headerPanel.Controls.Add(rogerHero);
 
         var hudPanel = new Panel
         {
-            Location = new Point(22, 80),
-            Size = new Size(ClientSize.Width - 44, 78),
+            Location = new Point(22, 180),
+            Size = new Size(ClientSize.Width - 44, 108),
             Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
             BackColor = Color.FromArgb(21, 56, 78),
             BorderStyle = BorderStyle.FixedSingle
         };
 
-        foodValue = AddHudMetric(hudPanel, "FOOD", 16, 12, "—", Color.FromArgb(121, 212, 255));
-        arenasValue = AddHudMetric(hudPanel, "ARENE JUCATE", 180, 12, "0", Color.FromArgb(255, 218, 105));
-        firstValue = AddHudMetric(hudPanel, "LOCUL 1", 370, 12, "0", Color.FromArgb(255, 214, 69));
-        secondValue = AddHudMetric(hudPanel, "LOCUL 2", 495, 12, "0", Color.FromArgb(208, 218, 230));
-        thirdValue = AddHudMetric(hudPanel, "LOCUL 3", 620, 12, "0", Color.FromArgb(219, 153, 99));
+        foodValue = AddHudMetric(hudPanel, "FOOD", 14, 14, "—", Color.FromArgb(125, 211, 252));
+        arenasValue = AddHudMetric(hudPanel, "ARENE", 164, 14, "0", Color.FromArgb(253, 224, 71));
+        firstValue = AddHudMetric(hudPanel, "LOCUL 1", 314, 14, "0", Color.FromArgb(250, 204, 21), "trophy-1.png");
+        secondValue = AddHudMetric(hudPanel, "LOCUL 2", 464, 14, "0", Color.FromArgb(226, 232, 240), "trophy-2.png");
+        thirdValue = AddHudMetric(hudPanel, "LOCUL 3", 614, 14, "0", Color.FromArgb(251, 146, 60), "trophy-3.png");
 
-        refreshHudButton = CreateButton("Refresh Food", new Point(734, 11), Color.FromArgb(61, 117, 180), new Size(106, 30));
-        resetStatsButton = CreateButton("Reset stats", new Point(844, 11), Color.FromArgb(128, 78, 78), new Size(102, 30));
+        refreshHudButton = CreateButton("Refresh Food", new Point(780, 18), Color.FromArgb(14, 116, 144), new Size(138, 36));
+        resetStatsButton = CreateButton("Reset stats", new Point(928, 18), Color.FromArgb(153, 55, 74), new Size(136, 36));
+        stopHapticSoundButton = CreateButton("Stop alert sound", new Point(928, 65), Color.FromArgb(171, 49, 66), new Size(136, 29));
+        stopHapticSoundButton.Font = new Font("Segoe UI", 8F, FontStyle.Bold, GraphicsUnit.Point);
         hudPanel.Controls.Add(refreshHudButton);
         hudPanel.Controls.Add(resetStatsButton);
+        hudPanel.Controls.Add(stopHapticSoundButton);
 
         lastPlaceValue = new Label
         {
             Text = "Ultima poziție: —",
             ForeColor = Color.FromArgb(190, 210, 230),
             AutoSize = true,
-            Location = new Point(734, 48),
+            Location = new Point(782, 69),
             Font = new Font("Segoe UI", 8.5F, FontStyle.Regular, GraphicsUnit.Point)
         };
         hudPanel.Controls.Add(lastPlaceValue);
 
+        var foodPanel = CreateSurfacePanel(new Point(22, 302), new Size(ClientSize.Width - 44, 80), Color.FromArgb(24, 39, 63));
+        foodPanel.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+        var foodCaption = new Label
+        {
+            Text = "FOOD TOURNAMENTS  •  HAPTIC ALERT ARMED BETWEEN TOURNAMENTS",
+            ForeColor = Color.FromArgb(148, 196, 255),
+            AutoSize = true,
+            Location = new Point(14, 11),
+            Font = new Font("Segoe UI", 8F, FontStyle.Bold, GraphicsUnit.Point)
+        };
         var countLabel = new Label
         {
-            Text = "Număr turnee Food:",
-            ForeColor = Color.White,
+            Text = "Număr turnee:",
+            ForeColor = Color.FromArgb(226, 232, 240),
             AutoSize = true,
-            Location = new Point(22, 177)
+            Location = new Point(14, 39)
         };
 
         updateVersionLabel = new Label
@@ -146,7 +197,8 @@ internal sealed class ArenaControlForm : Form
             Text = "Updates: checking GitHub…",
             ForeColor = Color.FromArgb(190, 210, 230),
             AutoSize = true,
-            Location = new Point(300, 177)
+            Location = new Point(862, 12),
+            Anchor = AnchorStyles.Top | AnchorStyles.Right
         };
 
         tournamentCount = new NumericUpDown
@@ -155,21 +207,21 @@ internal sealed class ArenaControlForm : Form
             Maximum = 50,
             Value = 1,
             Width = 80,
-            Location = new Point(172, 173),
+            Location = new Point(126, 35),
             Font = new Font("Segoe UI", 10F, FontStyle.Bold, GraphicsUnit.Point)
         };
 
-        dryRunButton = CreateButton("Safe test (no taps)", new Point(22, 215), Color.FromArgb(61, 117, 180), new Size(174, 38));
-        selectedRunsButton = CreateButton("Run selected tournaments", new Point(205, 215), Color.FromArgb(45, 166, 91), new Size(220, 38));
-        untilFoodEndsButton = CreateButton("Run until Food stops", new Point(434, 215), Color.FromArgb(204, 132, 44), new Size(210, 38));
-        stopButton = CreateButton("Stop", new Point(653, 215), Color.FromArgb(188, 66, 66), new Size(170, 38));
-        checkUpdatesButton = CreateButton("Check updates", new Point(832, 215), Color.FromArgb(88, 91, 180), new Size(124, 38));
+        dryRunButton = CreateButton("Safe test", new Point(232, 27), Color.FromArgb(30, 100, 151), new Size(130, 38));
+        selectedRunsButton = CreateButton("Run selected", new Point(372, 27), Color.FromArgb(22, 130, 88), new Size(150, 38));
+        untilFoodEndsButton = CreateButton("Run until Food stops", new Point(532, 27), Color.FromArgb(185, 104, 30), new Size(174, 38));
+        stopButton = CreateButton("Stop", new Point(716, 27), Color.FromArgb(190, 54, 74), new Size(96, 38));
+        checkUpdatesButton = CreateButton("Check updates", new Point(822, 27), Color.FromArgb(79, 70, 229), new Size(130, 38));
         stopButton.Enabled = false;
 
         var invasionPanel = new Panel
         {
-            Location = new Point(22, 266),
-            Size = new Size(ClientSize.Width - 44, 66),
+            Location = new Point(22, 394),
+            Size = new Size(ClientSize.Width - 44, 96),
             Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
             BackColor = Color.FromArgb(55, 42, 82),
             BorderStyle = BorderStyle.FixedSingle
@@ -219,8 +271,8 @@ internal sealed class ArenaControlForm : Form
 
         var invasionRunPanel = new Panel
         {
-            Location = new Point(22, 342),
-            Size = new Size(ClientSize.Width - 44, 58),
+            Location = new Point(22, 502),
+            Size = new Size(ClientSize.Width - 44, 82),
             Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
             BackColor = Color.FromArgb(73, 47, 38),
             BorderStyle = BorderStyle.FixedSingle
@@ -297,8 +349,8 @@ internal sealed class ArenaControlForm : Form
 
         var logPanel = new Panel
         {
-            Location = new Point(22, 410),
-            Size = new Size(ClientSize.Width - 44, ClientSize.Height - 432),
+            Location = new Point(22, 596),
+            Size = new Size(ClientSize.Width - 44, ClientSize.Height - 618),
             Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
             BackColor = BackColor
         };
@@ -306,17 +358,18 @@ internal sealed class ArenaControlForm : Form
         logPanel.Controls.Add(outputLabel);
         logPanel.Controls.Add(status);
 
-        Controls.Add(title);
-        Controls.Add(description);
+        Controls.Add(headerPanel);
         Controls.Add(hudPanel);
-        Controls.Add(countLabel);
-        Controls.Add(updateVersionLabel);
-        Controls.Add(tournamentCount);
-        Controls.Add(dryRunButton);
-        Controls.Add(selectedRunsButton);
-        Controls.Add(untilFoodEndsButton);
-        Controls.Add(stopButton);
-        Controls.Add(checkUpdatesButton);
+        foodPanel.Controls.Add(foodCaption);
+        foodPanel.Controls.Add(countLabel);
+        foodPanel.Controls.Add(updateVersionLabel);
+        foodPanel.Controls.Add(tournamentCount);
+        foodPanel.Controls.Add(dryRunButton);
+        foodPanel.Controls.Add(selectedRunsButton);
+        foodPanel.Controls.Add(untilFoodEndsButton);
+        foodPanel.Controls.Add(stopButton);
+        foodPanel.Controls.Add(checkUpdatesButton);
+        Controls.Add(foodPanel);
         Controls.Add(invasionPanel);
         Controls.Add(invasionRunPanel);
         Controls.Add(logPanel);
@@ -327,6 +380,7 @@ internal sealed class ArenaControlForm : Form
         stopButton.Click += delegate { StopCurrentRun(); };
         refreshHudButton.Click += async delegate { await RefreshFoodAsync(); };
         resetStatsButton.Click += async delegate { await ResetStatsAsync(); };
+        stopHapticSoundButton.Click += delegate { StopHapticSound(); };
         checkUpdatesButton.Click += async delegate { await CheckForUpdatesAsync(true); };
         invasionStep.SelectedIndexChanged += delegate { invasionInstruction.Text = GetInvasionInstruction(invasionStep.SelectedIndex); };
         captureInvasionButton.Click += async delegate { await CaptureInvasionStepAsync(); };
@@ -367,16 +421,70 @@ internal sealed class ArenaControlForm : Form
             invasionDryRunButton.Enabled = false;
             runInvasionButton.Enabled = false;
         }
+        if (!File.Exists(hapticAlertScript))
+        {
+            stopHapticSoundButton.Enabled = false;
+            AppendLine("WARNING: Haptic Alert module is unavailable.");
+        }
     }
 
-    private Label AddHudMetric(Panel panel, string caption, int x, int y, string value, Color valueColor)
+    private Panel CreateSurfacePanel(Point location, Size size, Color background)
     {
+        return new Panel
+        {
+            Location = location,
+            Size = size,
+            BackColor = background,
+            BorderStyle = BorderStyle.FixedSingle
+        };
+    }
+
+    private PictureBox CreateRogerHero()
+    {
+        var hero = new PictureBox
+        {
+            Size = new Size(320, 164),
+            BackColor = Color.Transparent,
+            SizeMode = PictureBoxSizeMode.Zoom,
+            TabStop = false
+        };
+        string assetPath = Path.Combine(rootDirectory, "assets", "roger-hud.png");
+        if (File.Exists(assetPath))
+        {
+            using (var source = Image.FromFile(assetPath))
+            {
+                hero.Image = new Bitmap(source);
+            }
+        }
+        else
+        {
+            hero.AccessibleName = "Roger image unavailable";
+        }
+        return hero;
+    }
+
+    private Label AddHudMetric(Panel panel, string caption, int x, int y, string value, Color valueColor, string trophyFile = null)
+    {
+        bool hasTrophy = !String.IsNullOrWhiteSpace(trophyFile);
+        var card = new Panel
+        {
+            Location = new Point(x, y),
+            Size = new Size(136, 78),
+            BackColor = Color.FromArgb(17, 34, 54),
+            BorderStyle = BorderStyle.FixedSingle
+        };
+        var accent = new Panel
+        {
+            Location = new Point(0, 0),
+            Size = new Size(5, 78),
+            BackColor = valueColor
+        };
         var captionLabel = new Label
         {
             Text = caption,
-            ForeColor = Color.FromArgb(174, 205, 226),
+            ForeColor = Color.FromArgb(148, 163, 184),
             AutoSize = true,
-            Location = new Point(x, y),
+            Location = new Point(hasTrophy ? 64 : 14, 12),
             Font = new Font("Segoe UI", 8F, FontStyle.Bold, GraphicsUnit.Point)
         };
         var valueLabel = new Label
@@ -384,11 +492,33 @@ internal sealed class ArenaControlForm : Form
             Text = value,
             ForeColor = valueColor,
             AutoSize = true,
-            Location = new Point(x, y + 24),
-            Font = new Font("Segoe UI", 16F, FontStyle.Bold, GraphicsUnit.Point)
+            Location = new Point(hasTrophy ? 66 : 12, 33),
+            Font = new Font("Segoe UI", 17F, FontStyle.Bold, GraphicsUnit.Point)
         };
-        panel.Controls.Add(captionLabel);
-        panel.Controls.Add(valueLabel);
+        card.Controls.Add(accent);
+        if (hasTrophy)
+        {
+            string trophyPath = Path.Combine(rootDirectory, "assets", trophyFile);
+            if (File.Exists(trophyPath))
+            {
+                var trophy = new PictureBox
+                {
+                    Location = new Point(9, 10),
+                    Size = new Size(48, 60),
+                    SizeMode = PictureBoxSizeMode.Zoom,
+                    BackColor = Color.Transparent,
+                    TabStop = false
+                };
+                using (var source = Image.FromFile(trophyPath))
+                {
+                    trophy.Image = new Bitmap(source);
+                }
+                card.Controls.Add(trophy);
+            }
+        }
+        card.Controls.Add(captionLabel);
+        card.Controls.Add(valueLabel);
+        panel.Controls.Add(card);
         return valueLabel;
     }
 
@@ -403,9 +533,18 @@ internal sealed class ArenaControlForm : Form
             ForeColor = Color.White,
             FlatStyle = FlatStyle.Flat,
             Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point),
-            UseVisualStyleBackColor = false
+            UseVisualStyleBackColor = false,
+            Cursor = Cursors.Hand
         };
-        button.FlatAppearance.BorderColor = Color.FromArgb(230, 240, 250);
+        button.FlatAppearance.BorderColor = Color.FromArgb(226, 232, 240);
+        button.FlatAppearance.MouseOverBackColor = Color.FromArgb(
+            Math.Min(255, color.R + 18),
+            Math.Min(255, color.G + 18),
+            Math.Min(255, color.B + 18));
+        button.FlatAppearance.MouseDownBackColor = Color.FromArgb(
+            Math.Max(0, color.R - 18),
+            Math.Max(0, color.G - 18),
+            Math.Max(0, color.B - 18));
         return button;
     }
 
@@ -1042,6 +1181,29 @@ internal sealed class ArenaControlForm : Form
         }
     }
 
+    private void StopHapticSound()
+    {
+        if (!File.Exists(hapticAlertScript)) return;
+        try
+        {
+            var process = Process.Start(new ProcessStartInfo
+            {
+                FileName = PowerShellPath(),
+                Arguments = "-NoProfile -ExecutionPolicy Bypass -File \"" + hapticAlertScript + "\" -Mode StopSound",
+                WorkingDirectory = rootDirectory,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            });
+            if (process != null) process.WaitForExit(5000);
+            AppendLine("Haptic Alert sound stop requested. The game dialog was not touched.");
+            SetStatus("Haptic Alert sound stopped. The game dialog was not touched.", Color.FromArgb(255, 226, 136));
+        }
+        catch (Exception ex)
+        {
+            AppendLine("Haptic Alert sound stop warning: " + ex.Message);
+        }
+    }
+
     private void ForceMonitorMode()
     {
         try
@@ -1087,6 +1249,7 @@ internal sealed class ArenaControlForm : Form
         invasionMode.Enabled = !running && File.Exists(invasionRunScript);
         invasionDryRunButton.Enabled = !running && File.Exists(invasionRunScript);
         runInvasionButton.Enabled = !running && File.Exists(invasionRunScript);
+        stopHapticSoundButton.Enabled = File.Exists(hapticAlertScript);
         stopButton.Enabled = running;
     }
 

@@ -534,14 +534,17 @@ function Choose-ArenaTarget {
         if ($Mode -eq 'lowest-power') {
             $target = $powerSafe | Sort-Object EnemyPower, EnemyPlace | Select-Object -First 1
         }
-        else {
-            $betterSafe = @($powerSafe | Where-Object { $_.EnemyPlace -lt $OwnPlace })
-            if ($betterSafe.Count -gt 0) {
-                $sortProperties = @(
-                    @{ Expression = 'EnemyPlace'; Descending = $true }
-                    @{ Expression = 'EnemyPower'; Descending = $false }
-                )
-                $target = $betterSafe | Sort-Object -Property $sortProperties | Select-Object -First 1
+	        else {
+	            $betterSafe = @($powerSafe | Where-Object { $_.EnemyPlace -lt $OwnPlace })
+	            if ($betterSafe.Count -gt 0) {
+	                # Better-rank mode still favors the weakest eligible target.
+	                # A nearby rank breaks only an equal-power tie; it must never
+	                # make a 1.01M opponent win over an available 800k opponent.
+	                $sortProperties = @(
+	                    @{ Expression = 'EnemyPower'; Descending = $false }
+	                    @{ Expression = 'EnemyPlace'; Descending = $true }
+	                )
+	                $target = $betterSafe | Sort-Object -Property $sortProperties | Select-Object -First 1
             }
             else {
                 Write-Warning 'No better-ranked opponent is at or below your squad power; falling back to minimum power.'

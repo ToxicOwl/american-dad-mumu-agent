@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.1 — 20 October 2026
+
+- Moved the Haptic Alert check to the CREATE SQUAD screen: it now waits five seconds and checks before the squad CONFIRM tap.
+- Removed the obsolete end-of-tournament Haptic check.
+
 ## 1.7.0 — 19 October 2026
 
 - Added reusable Haptic Alert detection for the fixed SUSPICIOUS HAPTIC ACTIVITY header.

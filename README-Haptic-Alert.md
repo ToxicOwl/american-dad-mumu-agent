@@ -4,10 +4,10 @@
 
 ## Current Arena behavior
 
-After every completed Arena tournament, before the launcher can start another Food tournament, it takes one read-only screenshot.
+After Food participation produces the CREATE SQUAD screen, the launcher waits five seconds and takes one read-only screenshot. The check occurs before it can tap the squad CONFIRM button.
 
-- **No alert:** the next tournament may continue normally.
-- **Alert detected:** Arena stops, restores `config.json` to monitor mode, saves a screenshot under `captures\haptic-alert`, and starts the configured alert sound in a loop when the sound file exists.
+- **No alert:** the squad is confirmed and the new Arena continues to matchmaking and the tournament bracket.
+- **Alert detected:** the new Arena stops before squad confirmation, restores `config.json` to monitor mode, saves a screenshot under `captures\haptic-alert`, and starts the configured alert sound in a loop when the sound file exists.
 - It **never** solves, dismisses, confirms, or taps the haptic dialog.
 
 ## Add your sound

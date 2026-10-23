@@ -15,8 +15,9 @@ param(
     [switch]$ResetCycle,
 
     # Time allowed for the automatic battle to reach VICTORY or DEFEAT.
-    [ValidateRange(10, 90)]
-    [int]$BattleTimeoutSeconds = 35,
+    # Covers non-VIP speed and a small amount of emulator/network lag.
+    [ValidateRange(10, 120)]
+    [int]$BattleTimeoutSeconds = 75,
 
     # Includes the complete Next stage in countdown before the next pyramid is ready.
     [ValidateRange(30, 300)]

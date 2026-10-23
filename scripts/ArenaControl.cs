@@ -32,7 +32,7 @@ internal sealed class UpdateInfo
 
 internal sealed class ArenaControlForm : Form
 {
-    private const string ApplicationVersion = "1.7.1";
+    private const string ApplicationVersion = "1.7.2";
     private const string ReleaseRepository = "ToxicOwl/american-dad-mumu-agent";
     private readonly string rootDirectory;
     private readonly string cycleScript;
@@ -59,6 +59,9 @@ internal sealed class ArenaControlForm : Form
     private readonly Button invasionDryRunButton;
     private readonly Button runInvasionButton;
     private readonly Label updateVersionLabel;
+    private readonly Panel runStateLight;
+    private readonly Label runStateLabel;
+    private readonly Timer runStatePulseTimer;
     private readonly RichTextBox output;
     private readonly Label status;
     private readonly Label foodValue;
@@ -122,6 +125,39 @@ internal sealed class ArenaControlForm : Form
             Font = new Font("Segoe UI", 8F, FontStyle.Bold, GraphicsUnit.Point)
         };
 
+        var runStateBadge = new Panel
+        {
+            Location = new Point(210, 108),
+            Size = new Size(202, 26),
+            BackColor = Color.FromArgb(45, 30, 41),
+            BorderStyle = BorderStyle.FixedSingle
+        };
+        runStateLight = new Panel
+        {
+            Location = new Point(9, 6),
+            Size = new Size(14, 14),
+            BackColor = Color.FromArgb(248, 113, 113)
+        };
+        runStateLabel = new Label
+        {
+            Text = "BOT OPRIT",
+            ForeColor = Color.FromArgb(254, 202, 202),
+            AutoSize = false,
+            TextAlign = ContentAlignment.MiddleLeft,
+            Location = new Point(31, 3),
+            Size = new Size(162, 20),
+            Font = new Font("Segoe UI", 8F, FontStyle.Bold, GraphicsUnit.Point)
+        };
+        runStateBadge.Controls.Add(runStateLight);
+        runStateBadge.Controls.Add(runStateLabel);
+        runStatePulseTimer = new Timer { Interval = 550 };
+        runStatePulseTimer.Tick += delegate
+        {
+            runStateLight.BackColor = runStateLight.BackColor == Color.FromArgb(74, 222, 128)
+                ? Color.FromArgb(22, 101, 52)
+                : Color.FromArgb(74, 222, 128);
+        };
+
         var headerNote = new Label
         {
             Text = "Roger is watching the runs.",
@@ -138,6 +174,7 @@ internal sealed class ArenaControlForm : Form
         headerPanel.Controls.Add(title);
         headerPanel.Controls.Add(description);
         headerPanel.Controls.Add(versionBadge);
+        headerPanel.Controls.Add(runStateBadge);
         headerPanel.Controls.Add(headerNote);
         headerPanel.Controls.Add(rogerHero);
 
@@ -1174,6 +1211,7 @@ internal sealed class ArenaControlForm : Form
         var process = runningProcess;
         if (process != null && !process.HasExited)
         {
+            SetRunIndicatorStopping();
             AppendLine("Stop requested. Ending current PowerShell process and restoring monitor mode.");
             try { process.Kill(); }
             catch (Exception ex) { AppendLine("Unable to stop process: " + ex.Message); }
@@ -1251,6 +1289,32 @@ internal sealed class ArenaControlForm : Form
         runInvasionButton.Enabled = !running && File.Exists(invasionRunScript);
         stopHapticSoundButton.Enabled = File.Exists(hapticAlertScript);
         stopButton.Enabled = running;
+        if (running) SetRunIndicatorRunning();
+        else SetRunIndicatorStopped();
+    }
+
+    private void SetRunIndicatorRunning()
+    {
+        runStatePulseTimer.Start();
+        runStateLight.BackColor = Color.FromArgb(74, 222, 128);
+        runStateLabel.Text = "BOT RULEAZĂ";
+        runStateLabel.ForeColor = Color.FromArgb(187, 247, 208);
+    }
+
+    private void SetRunIndicatorStopping()
+    {
+        runStatePulseTimer.Stop();
+        runStateLight.BackColor = Color.FromArgb(250, 204, 21);
+        runStateLabel.Text = "SE OPREȘTE…";
+        runStateLabel.ForeColor = Color.FromArgb(254, 240, 138);
+    }
+
+    private void SetRunIndicatorStopped()
+    {
+        runStatePulseTimer.Stop();
+        runStateLight.BackColor = Color.FromArgb(248, 113, 113);
+        runStateLabel.Text = "BOT OPRIT";
+        runStateLabel.ForeColor = Color.FromArgb(254, 202, 202);
     }
 
     private void SetStatus(string message, Color color)

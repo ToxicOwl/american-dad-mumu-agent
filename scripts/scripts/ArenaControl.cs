@@ -32,7 +32,7 @@ internal sealed class UpdateInfo
 
 internal sealed class ArenaControlForm : Form
 {
-    private const string ApplicationVersion = "1.7.0";
+    private const string ApplicationVersion = "1.7.1";
     private const string ReleaseRepository = "ToxicOwl/american-dad-mumu-agent";
     private readonly string rootDirectory;
     private readonly string cycleScript;

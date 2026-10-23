@@ -24,8 +24,10 @@ $LogPath = Join-Path $ProjectRoot 'logs\arena.jsonl'
 $CapturesRoot = Join-Path $ProjectRoot 'captures'
 $HudScript = Join-Path $PSScriptRoot 'arena-hud.ps1'
 $RetentionScript = Join-Path $PSScriptRoot 'arena-capture-retention.ps1'
+$HapticAlertScript = Join-Path $PSScriptRoot 'haptic-alert.ps1'
 if (-not (Test-Path -LiteralPath $RetentionScript)) { throw "Missing capture-retention script: $RetentionScript" }
 . $RetentionScript
+if (-not (Test-Path -LiteralPath $HapticAlertScript)) { throw "Missing Haptic Alert module: $HapticAlertScript" }
 $RunStamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $EvidenceDirectory = Join-Path $ProjectRoot "captures\arena-start-food-$RunStamp"
 New-Item -ItemType Directory -Path $EvidenceDirectory -Force | Out-Null
@@ -68,6 +70,41 @@ function Save-JsonFile {
     $json = $Value | ConvertTo-Json -Depth 16
     $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
     [System.IO.File]::WriteAllText($Path, $json + [Environment]::NewLine, $utf8NoBom)
+}
+
+function Stop-ForHapticAlertBeforeSquadConfirm {
+    # Recognition-only: never solve, dismiss, confirm, or tap the haptic dialog.
+    # The game displays it shortly after Food participation. This runs only after
+    # CREATE SQUAD is visible and before the squad CONFIRM tap.
+    Start-Sleep -Seconds 5
+    $json = & $HapticAlertScript -Mode CheckCurrent -AdbPath $adbPath -Device $device
+    if ($LASTEXITCODE -ne 0) {
+        throw "Haptic Alert check failed with exit code $LASTEXITCODE. No further Arena action was sent."
+    }
+    $check = $json | ConvertFrom-Json
+    if (-not [bool]$check.detected) {
+        Write-Host ("Haptic Alert: clear before squad confirmation (score {0}; threshold {1})." -f $check.score, $check.threshold) -ForegroundColor DarkGray
+        return
+    }
+
+    $sound = & $HapticAlertScript -Mode StartSound
+    if ($LASTEXITCODE -eq 0) {
+        try {
+            $soundState = $sound | ConvertFrom-Json
+            if (-not [bool]$soundState.started) {
+                Write-Warning ("Haptic Alert detected, but audio is unavailable: {0}." -f $soundState.reason)
+            }
+        }
+        catch {
+            Write-Warning 'Haptic Alert detected, but audio status could not be read.'
+        }
+    }
+    else {
+        Write-Warning 'Haptic Alert detected, but the alert sound could not be started.'
+    }
+
+    Write-Host 'HAPTIC ALERT DETECTED BEFORE SQUAD CONFIRMATION. Automation is stopped; no haptic puzzle action was sent.' -ForegroundColor Red
+    throw ("Haptic Alert detected before squad confirmation (score {0}; threshold {1}). Evidence: {2}" -f $check.score, $check.threshold, $check.evidence_path)
 }
 
 function Enable-WindowsOcr {
@@ -389,6 +426,7 @@ try {
     if ($null -eq $squad) { throw 'CREATE SQUAD was not recognized after Food participation. CONFIRM was not pressed.' }
     Refresh-HudFood
 
+    Stop-ForHapticAlertBeforeSquadConfirm
     Send-AdbInput -Arguments @('shell', 'input', 'tap', $Coordinates.ConfirmSquadX, $Coordinates.ConfirmSquadY) -AdbPath $adbPath -Device $device
     $ready = Wait-ForScreen -ExpectedKinds @('matchmaking', 'bracket') -TimeoutSeconds $MatchmakingTimeoutSeconds -Label 'matchmaking' -AdbPath $adbPath -Device $device
     if ($null -eq $ready) { throw ('Players 15/15 or the tournament bracket was not recognized within {0} seconds.' -f $MatchmakingTimeoutSeconds) }

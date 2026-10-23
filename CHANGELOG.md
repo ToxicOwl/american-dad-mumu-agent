@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.2 — 22 October 2026
+
+- Added a pulsing HUD run indicator: green while a local bot process is running, yellow while Stop is being processed, and red when stopped.
+- Increased the Arena battle-result wait from 35 to 75 seconds for non-VIP speed and temporary lag.
+
 ## 1.7.1 — 20 October 2026
 
 - Moved the Haptic Alert check to the CREATE SQUAD screen: it now waits five seconds and checks before the squad CONFIRM tap.
